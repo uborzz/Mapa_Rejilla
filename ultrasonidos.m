@@ -1,83 +1,82 @@
 function [mapaOcupado, cono, mapaLibre] = ultrasonidos(posX, posY, angRobot, mapaRobot, mapaAuxiliar, mapaReal)
 
-%Tests
-% clc, clear all, close all
-% 
-% mapaReal =load('Mapa.mat');
-% mapaRobot = ones(size(mapaReal.M));
-% 
-% %image(35*mapaReal.M);
-% mapaReal = mapaReal.M;
-% 
-% posX = 200;
-% posY = 100;
-% angRobot = 10;
-
-%Config sensor:
+%% ------------------- Config sensor:  ----------------------------
+%
 rmax = 80; 
 angSensor = 30; %Grados
 Kd = 3;
 eps = 10;
 
 
-mapaOcupado=mapaRobot;
-mapaLibre=mapaAuxiliar;
+mapaOcupado=mapaRobot; %Mapa probabilidad obstaculo
+mapaLibre=mapaAuxiliar; %Mapa probabilidad no-obstaculo
 
-%-------------------------------------------- Limites ---------
-        prec1 = 0;
-        prec2 = 0;
-        
-        lim1 = angRobot+(angSensor/2);
-        if lim1 > 180
-            lim1 = lim1-360;
-            prec1 = 1;
-        end
+dimensionesMapa = size(mapaRobot);%Dimensiones del mapa        
 
-        lim2 = angRobot-(angSensor/2);
-        if lim2 < -180
-            lim2 = lim2+360;
-            prec2 = 1;
-        end
-%----------------------------------------------------------------       
-
-dimensionesMapa = size(mapaRobot);        
+%% ----------------------- FUNCIONAMIENTO ---------------------------
+%
+% - Se crea el "cono" del rango delsensor mediante 2 lineas y una circunferencia.
+% - Dicha figura se emplea para localizar objetos contrastandola con el 
+%     mapa real conocido. Se toma la menor distancia a un obstáculo dentro del
+%     cono. De esta forma se simula la medición del ultrasonidos.
+% - Se actualiza la zona dentro del cono que no se tiene por seguro que está vacía
+%     iterando con el teorema de Bayes.
+%
 
 
-%Cono sensor (máscara)
+%% ---------------------- Limites Ángulos Cono ---------------------
+    prec1 = 0; %auxiliares para conocer paso por pi radianes
+    prec2 = 0;
 
-%---------------------------------------------- Reduccion Matriz ---
-mReducMinY = posY - rmax;
-if mReducMinY < 1
-    mReducMinY = 1;
-end
+    lim1 = angRobot+(angSensor/2);
+    if lim1 > 180
+        lim1 = lim1-360;
+        prec1 = 1;
+    end
 
-mReducMaxY = posY + rmax;
-if mReducMaxY > dimensionesMapa(2);
-    mReducMaxY = dimensionesMapa(2);
-end
+    lim2 = angRobot-(angSensor/2);
+    if lim2 < -180
+        lim2 = lim2+360;
+        prec2 = 1;
+    end
 
-mReducMinX = posX - rmax;
-if mReducMinX < 1
-    mReducMinX = 1;
-end
 
-mReducMaxX = posX + rmax;
-if mReducMaxX > dimensionesMapa(1);
-    mReducMaxX = dimensionesMapa(1);
-end
+%% ---------------- Reduccion Matriz para loop ----------------------
+% Utilizamos una matriz del tamaño del rango del sensor x2 por facilidad
+% Habría que considerar optimizar si el tiempo de procesado se ve alto
 
-%--------------------------------------------------------------------
+    mReducMinY = posY - rmax;
+    if mReducMinY < 1
+        mReducMinY = 1;
+    end
 
-mapaCono = zeros(dimensionesMapa);
+    mReducMaxY = posY + rmax;
+    if mReducMaxY > dimensionesMapa(2);
+        mReducMaxY = dimensionesMapa(2);
+    end
+
+    mReducMinX = posX - rmax;
+    if mReducMinX < 1
+        mReducMinX = 1;
+    end
+
+    mReducMaxX = posX + rmax;
+    if mReducMaxX > dimensionesMapa(1);
+        mReducMaxX = dimensionesMapa(1);
+    end
+
+%% --- Cono comprobando el ángulo respecto al punto del robot ------------
+
+mapaCono = zeros(dimensionesMapa); 
 mapaCono(mReducMinY:mReducMaxY, mReducMinX:mReducMaxX) = ones(rmax*2+1,rmax*2+1);
 
 
-estado = 1
+% estado = 1
 
  for i = mReducMinX:mReducMaxX
     for j = mReducMinY:mReducMaxY
-% for i = 1:dimensionesMapa(1)
-%     for j = 1:dimensionesMapa(2)
+
+        %Posiciones division por cero
         if (i-posX) == 0 && (j < posY)
             angCasilla = -90;
         
@@ -87,6 +86,7 @@ estado = 1
             angCasilla = atand((j-posY)/(i-posX));
         end
         
+        %Corrección para tercer y cuarto cuadrantes
         if (i < posX) && j > posY 
              angCasilla = angCasilla + 180;
              if angCasilla > 180
@@ -100,8 +100,8 @@ estado = 1
         end
                 
                
-    %Definen las rectas del "cono"
-    
+    %  Definen las rectas del "cono"
+     
     	%Caso habitual, ninguna linea limite sobrepasa
         if  prec1 == 0 && prec2 == 0 
             if angCasilla > lim1 %> 
@@ -111,7 +111,7 @@ estado = 1
                 mapaCono(j,i) = 0;
             end
             
-        %Caso cruzamos 2pi rads
+        %Caso cruzamos 180 grados
         elseif prec1 == 1 || prec2 == 1
 
             if angCasilla > lim1 && angCasilla < lim2 %<
@@ -120,21 +120,24 @@ estado = 1
             
         end
 
-    %El arco del cono        
+        %El arco del cono        
         if sqrt((i-posX)^2+(j-posY)^2) > rmax
             mapaCono(j,i) = 0;
         end
     end
 end
 
-%mapaCono = zeros(300,500); (y, X)
-estado = 2
+%mapaCono = zeros(300,500); (y, X) % tests
 cono = convert(mapaCono); %fixeado para representación por image()
 distObj = 10000;
 
- %-------------------------------------- Matriz más pequeña ------
 
-% % 
+%% ---------------- Reduccion Matriz para loop ----------------------
+% Utilizamos una matriz del tamaño del rango del sensor x2 por facilidad
+% Habría que considerar optimizar si el tiempo de procesado se ve alto
+% Es distinta a la anterior empleada porque se tiene en cuenta Y para 
+% ser representada con image()
+
 posY = 501-posY; %fix representacion por image()
 
 mReducMinY = posY - rmax;
@@ -158,9 +161,10 @@ if mReducMaxX > dimensionesMapa(1);
 end
 
 
-%----------------------------------------------------------------
- estado = 3
-% distancia minima (simulación detección us)
+%% ------------------- Simulacion US -----------------------------
+% estado = 3
+% Distancia mínima (simulación detección ultrasonido)
+% Se atiende a la mínima distancia dentro del rango del sensor
  for i = mReducMinX:mReducMaxX
     for j = mReducMinY:mReducMaxY
         if (mapaReal(j,i)*cono(j,i))
@@ -169,10 +173,13 @@ end
             end
         end
     end
-end
+ end
 
+ 
 
-estado =4
+%% --------------------------- Bayes -----------------------------
+% estado =4 
+% Actualización estado de la ocupación celda: teorema de Bayes
 Ro=distObj;
  for i = mReducMinX:mReducMaxX
     for j = mReducMinY:mReducMaxY
