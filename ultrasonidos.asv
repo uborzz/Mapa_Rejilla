@@ -66,16 +66,21 @@ if mReducMaxX > dimensionesMapa(1);
     mReducMaxX = dimensionesMapa(1);
 end
 
+mReducMinX
+mReducMaxX
+mReducMinY
+mReducMaxY
 %--------------------------------------------------------------------
 
 mapaCono = zeros(dimensionesMapa);
-mapaCono(mReducMinY:mReducMaxY, mReducMinX:mReducMaxX) = ones(rmax*2+1,rmax*2+1);
+mapaCono(mReducMinX:mReducMaxX, mReducMinY:mReducMaxY) = ones(rmax*2+1,rmax*2+1);
 
-
+figure
+image(100*convert(mapaCono))
 estado = 1
 
  for i = mReducMinX:mReducMaxX
-    for j = mReducMinY:mReducMaxY
+    for j = mReducMinY:mReducMaxX
 % for i = 1:dimensionesMapa(1)
 %     for j = 1:dimensionesMapa(2)
         if (i-posX) == 0 && (j < posY)
@@ -126,7 +131,8 @@ estado = 1
         end
     end
 end
-
+figure
+image(mapaCono.*100)
 %mapaCono = zeros(300,500); (y, X)
 estado = 2
 cono = convert(mapaCono); %fixeado para representación por image()

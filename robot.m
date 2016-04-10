@@ -17,16 +17,17 @@ clear E
 mapaLibre = mapa;
 mapaOcupado = mapa;
 
-%[mapaOcupado, mapaLibre, cono] = ultrasonidos(200, 100, -90, mapaOcupado, mapaLibre, mapaReal);
+%[mapaOcupado, cono, mapaLibre] = ultrasonidos(200, 100, -90, mapaOcupado, mapaLibre, mapaReal);
 % 
-for m = -30:-15:-150
+for m = 0:-5:-180
     [mapaOcupado, cono, mapaLibre] = ultrasonidos(200, 100, m, mapaOcupado, mapaLibre, mapaReal);
 end
 
-% for m = 180:-15:0
-%     [mapaOcupado, mapaLibre, cono] = ultrasonidos(200, 100, m, mapaOcupado, mapaLibre, mapaReal);
-% end
+for m = 180:-5:0
+    [mapaOcupado, cono, mapaLibre] = ultrasonidos(200, 100, m, mapaOcupado, mapaLibre, mapaReal);
+end
 
+figure
 image(40.*mapaOcupado)
 
 
