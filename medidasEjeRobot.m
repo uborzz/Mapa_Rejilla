@@ -1,5 +1,8 @@
 clc, clear all
 
+%%% Modificación programa robot para definir un modo diferente de
+%%% funcionamiento
+
 mapaReal =load('Mapa.mat');
 mapa = ones(size(mapaReal.M));
 mapa = 0.5.*mapa;
@@ -29,29 +32,16 @@ Giro = double(int16(Giro));
 [ruedaDer, ruedaIzq, RecX', RecY', Giro']
 
 
-for k = 1%length(RecX) %
-    for m = 0:-5:-180
-        [mapaOcupado, cono, mapaLibre] = ultrasonidos(RecX(k), RecY(k), m, mapaOcupado, mapaLibre, mapaReal);
-    end
-    for m = 180:-5:0
-        [mapaOcupado, cono, mapaLibre] = ultrasonidos(RecX(k), RecY(k), m, mapaOcupado, mapaLibre, mapaReal);
-    end
-    
-    if k == 1
-        figure
-        image(50.*mapaOcupado), title('Apartado 1: Reconocimiento punto Inicial')
-    end
+for k = 1:length(RecX) %
+    %for asd= 1:3 %Descomentar for para Ap.C
+        [mapaOcupado, cono, mapaLibre] = ultrasonidos(RecX(k), RecY(k), Giro(k), mapaOcupado, mapaLibre, mapaReal);
+    %end
 end
 
-figure %Mapa real.
-image(40.*mapaReal), title('Mapa Real')
+figure
+image(50.*mapaOcupado), title('B. Medidas en el mismo sentido de dirección robot')
 
-figure %Mapa final recorrido completo con recorrido robot.
-image(50.*mapaOcupado), title('Apartado 1: Reconocimiento tras todo recorrido')
 hold on
 plot(RecX, 501-RecY, '-*r')
-
-
-
 
 

@@ -26,7 +26,6 @@ for i = 2:length(NI)
 end
 
 angleDeg = angle * 180 / pi;
-angleDeg
 end
 
 
